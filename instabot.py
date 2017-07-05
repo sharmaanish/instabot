@@ -1,8 +1,6 @@
 import requests, urllib
-from textblob import TextBlob
-from textblob.sentiments import NaiveBayesAnalyzer
-from  info import APP_ACCESS_TOKEN
-
+APP_ACCESS_TOKEN = '5652490641.8a9af2d.f596de80e7c14e35958c47ac73d97d40'
+import matplotlib.pyplot as pylab
 
 BASE_URL = 'https://api.instagram.com/v1/'
 
@@ -182,39 +180,32 @@ def post_a_comment(insta_username):
     else:
         print "Unable to add comment. Try again!"
 
-'''
-Function declaration to make delete negative comments from the recent post
-'''
+#code according to georaphical coordinates abt natural calamity
+def medobjloc():
 
-def delete_negative_comment(insta_username):
-    media_id = get_post_id(insta_username)
-    request_url = (BASE_URL + 'media/%s/comments/?access_token=%s') % (media_id, APP_ACCESS_TOKEN)
-    print 'GET request url : %s' % (request_url)
-    comment_info = requests.get(request_url).json()
-
-    if comment_info['meta']['code'] == 200:
-        if len(comment_info['data']):
-            #Here's a naive implementation of how to delete the negative comments :)
-            for x in range(0, len(comment_info['data'])):
-                comment_id = comment_info['data'][x]['id']
-                comment_text = comment_info['data'][x]['text']
-                blob = TextBlob(comment_text, analyzer=NaiveBayesAnalyzer())
-                if (blob.sentiment.p_neg > blob.sentiment.p_pos):
-                    print 'Negative comment : %s' % (comment_text)
-                    delete_url = (BASE_URL + 'media/%s/comments/%s/?access_token=%s') % (media_id, comment_id, APP_ACCESS_TOKEN)
-                    print 'DELETE request url : %s' % (delete_url)
-                    delete_info = requests.delete(delete_url).json()
-
-                    if delete_info['meta']['code'] == 200:
-                        print 'Comment successfully deleted!\n'
+    lat = 30.7333
+    lon = 76.7794
+    request_url = (BASE_URL + 'media/search?lat=%f&lng=%f&access_token=%s&distance=5000') % (lat, lon, APP_ACCESS_TOKEN)
+    loc_info = requests.get(request_url).json()
+    tag = {}#to add in dictionary about all post that were satisfying location coordinates
+    if loc_info['meta']['code'] == 200:
+        if len(loc_info['data']):
+            for media in range(0, len(loc_info['data'])):
+                for x in range(0, len(loc_info['data'][media]['tags'])):
+                    if loc_info['data'][media]['tags'][x] in tag:
+                        tag[loc_info['data'][media]['tags'][x]] += 1#add if in tag list to previous value
                     else:
-                        print 'Unable to delete comment!'
-                else:
-                    print 'Positive comment : %s\n' % (comment_text)
+                        tag[loc_info['data'][media]['tags'][x]] = 1#else add it dict
         else:
-            print 'There are no existing comments on the post!'
+            print 'sorry couldnt navigate your geographical area'
     else:
         print 'Status code other than 200 received!'
+    print tag
+    pylab.figure(1)
+    x = range(len(tag))
+    pylab.xticks(x, tag.keys())
+    pylab.plot(x, tag.values(), "b")
+    pylab.show()
 
 
 def start_bot():
@@ -228,8 +219,8 @@ def start_bot():
         print "d.Get the recent post of a user by username\n"
         print "e.Like the recent post of a user\n"
         print "f.Make a comment on the recent post of a user\n"
-        print "g.Delete negative comments from the recent post of a user\n"
-        print "h.Exit"
+        print "g.image capture of remote diaster hit areas\n"
+        print "h Exit\n"
 
         choice = raw_input("Enter you choice: ")
         if choice == "a":
@@ -248,12 +239,11 @@ def start_bot():
         elif choice=="f":
            insta_username = raw_input("Enter the username of the user: ")
            post_a_comment(insta_username)
-        elif choice=="g":
-           insta_username = raw_input("Enter the username of the user: ")
-           delete_negative_comment(insta_username)
-        elif choice == "h":
+        elif choice == "g":
+            medobjloc()
+        elif choice == "i":
             exit()
         else:
             print "wrong choice"
 
-start_bot
+start_bot()
